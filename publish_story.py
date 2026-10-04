@@ -163,13 +163,8 @@ def discover_ig_account_id(token: str) -> str:
 # --------------------------------------------------------------------------
 # rotation
 # --------------------------------------------------------------------------
-def pick_image() -> tuple[str, str, str | None]:
-    """Deterministically pick the (image, caption) for this time slot.
-
-    playlist.json entries can be:
-      {"file": "a.jpg", "caption": "texto"}  -> image + publication text
-      "b.jpg"                                -> image without text
-    """
+def load_entries() -> list[tuple[str, str | None]]:
+    """Load (filename, caption) pairs from stories/playlist.json."""
     playlist_path = HERE / "stories" / "playlist.json"
     if not playlist_path.exists():
         sys.exit("[ERROR] stories/playlist.json not found — create it with your image names.")
@@ -187,11 +182,10 @@ def pick_image() -> tuple[str, str, str | None]:
                 entries.append((name, None))
     if not entries:
         sys.exit("[ERROR] stories/playlist.json is empty — add your image file names.")
+    return entries
 
-    interval_h = int(env("PUBLISH_INTERVAL_H", default="3"))
-    slot = int(time.time()) // (interval_h * 3600)
-    filename, caption = entries[slot % len(entries)]
 
+def image_url_for(filename: str) -> str:
     base = env("PUBLIC_BASE_URL")
     if not base:
         sys.exit(
@@ -200,8 +194,21 @@ def pick_image() -> tuple[str, str, str | None]:
             "  Example with a public GitHub repo + jsDelivr CDN:\n"
             "    PUBLIC_BASE_URL=https://cdn.jsdelivr.net/gh/YOUR_GH_USER/YOUR_REPO@main/stories"
         )
-    url = f"{base.rstrip('/')}/{filename}"
-    return filename, url, caption
+    return f"{base.rstrip('/')}/{filename}"
+
+
+def pick_image() -> tuple[str, str, str | None]:
+    """Deterministically pick the (image, caption) for this time slot.
+
+    playlist.json entries can be:
+      {"file": "a.jpg", "caption": "texto"}  -> image + publication text
+      "b.jpg"                                -> image without text
+    """
+    entries = load_entries()
+    interval_h = int(env("PUBLISH_INTERVAL_H", default="3"))
+    slot = int(time.time()) // (interval_h * 3600)
+    filename, caption = entries[slot % len(entries)]
+    return filename, image_url_for(filename), caption
 
 
 # --------------------------------------------------------------------------
@@ -305,6 +312,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Publish an Instagram Story.")
     parser.add_argument("--dry-run", action="store_true", help="only show what would be published")
     parser.add_argument("--url", help="override the image URL to publish")
+    parser.add_argument("--image", help="publish a specific file from stories/playlist.json (uses its caption)")
     parser.add_argument("--feed", action="store_true", help="publish as a feed post (grid) instead of a Story")
     parser.add_argument("--caption", help="caption text (feed posts)")
     parser.add_argument("--refresh-only", action="store_true", help="only refresh the token and exit")
@@ -321,7 +329,17 @@ def main() -> None:
         read_comments(token, ig_id)
         return
 
-    if args.url:
+    if args.image:
+        entries = load_entries()
+        match = next((e for e in entries if e[0] == args.image), None)
+        if match is None:
+            sys.exit(
+                f"[ERROR] '{args.image}' is not in stories/playlist.json.\n"
+                f"  Available images: {', '.join(e[0] for e in entries)}"
+            )
+        filename, picked_caption = match
+        url = image_url_for(filename)
+    elif args.url:
         filename = args.url
         url = args.url
         picked_caption = None
