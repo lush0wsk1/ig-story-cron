@@ -1,0 +1,34 @@
+name: Publish Instagram Story
+
+on:
+  schedule:
+    # every 3 hours, at the top of the hour (UTC)
+    - cron: "0 */3 * * *"
+  workflow_dispatch: # manual "Run workflow" button
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests python-dotenv
+
+      - name: Publish this slot's story
+        run: python publish_story.py
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          IG_USER_TOKEN: ${{ secrets.IG_USER_TOKEN }}
+          IG_BUSINESS_ACCOUNT_ID: ${{ secrets.IG_BUSINESS_ACCOUNT_ID }}
+          PAGE_ID: ${{ secrets.PAGE_ID }}
+          PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
+          PUBLISH_INTERVAL_H: "3"

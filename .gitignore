@@ -1,0 +1,10 @@
+# Local credentials — never commit
+.env
+
+# macOS junk
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
