@@ -240,6 +240,13 @@ El API **descarga** la imagen de una URL pública; no lee tu disco.
 
 - **25 publicaciones/día** por cuenta (feed+stories+reels+carruseles **comparten**
   ese tope). Consultable: `GET /{ig-id}/content_publishing_limit`.
+- **Logs seguros (GitHub Actions):** `publish_story.py` nunca imprime URLs que
+  contengan el `access_token` (helper `api()` con errores "sanitizados"). En el
+  runner **no se refresca** el token: se usa el secret tal cual, para que
+  GitHub lo enmasque en los logs; el secret se actualiza a mano ~cada 50 días.
+- **Si un token se filtra** (p.ej. error crudo de requests en un log público):
+  revócalo en Instagram → **Ajustes → Apps y sitios web** → eliminar el acceso,
+  y regenera con `get_token.py` + actualiza el secret.
 - `GET /me/permissions` → verifica qué permisos tiene el token.
 - **Cuenta nueva:** calentar 1–3 semanas con 1–2 posts/día antes del cron a 8/día.
 - **2FA con app de autenticador**, no SMS.

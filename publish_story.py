@@ -57,6 +57,24 @@ def _env_path() -> Path:
     return HERE / ".env"
 
 
+def api(method: str, url: str, *, timeout: int = 30, **kw) -> requests.Response:
+    """HTTP helper that NEVER leaks URLs/tokens in errors.
+
+    Git Hub logs show tracebacks, so a requests.raise_for_status() would leak
+    the access_token (which is part of the URL) if the repo is public. This
+    helper only raises the API's error *message*.
+    """
+    resp = requests.request(method, url, timeout=timeout, **kw)
+    if not resp.ok:
+        try:
+            body = resp.json().get("error", {})
+            detail = body.get("message", "") or resp.text[:300]
+        except Exception:
+            detail = resp.text[:300]
+        raise RuntimeError(f"[API {resp.status_code}] {detail}")
+    return resp
+
+
 def write_env(key: str, value: str) -> None:
     """(Re)write one KEY=VALUE line into .env so refreshed tokens persist."""
     path = _env_path()
@@ -79,10 +97,14 @@ def write_env(key: str, value: str) -> None:
 def refresh_access_token() -> str:
     """Exchange/refresh the stored token into a fresh long-lived (60-day) token.
 
-    Tolerant on purpose: System-user tokens (recommended) don't need
-    refreshing and may reject the exchange call — we just keep using them.
+    On GitHub Actions we intentionally SKIP the refresh so the value used is
+    always the repository secret (GitHub masks secrets in logs). The secret is
+    updated manually every ~50 days.
     """
     token = env("IG_USER_TOKEN", required=True)
+    if os.getenv("GITHUB_ACTIONS") == "true":
+        print("[ok] running on GitHub Actions — using secret token as-is (no refresh)")
+        return token
     params = {
         "grant_type": "fb_exchange_token",
         "client_id": env("APP_ID", required=True),
@@ -90,15 +112,14 @@ def refresh_access_token() -> str:
         "fb_exchange_token": token,
     }
     try:
-        resp = requests.get(f"{BASE}/oauth/access_token", params=params, timeout=30)
-        resp.raise_for_status()
+        resp = api("GET", f"{BASE}/oauth/access_token", params=params, timeout=30)
         new_token = resp.json().get("access_token", "").strip()
         if new_token:
             write_env("IG_USER_TOKEN", new_token)
             print("[ok] token refreshed -> long-lived token stored in .env")
             return new_token
-    except requests.RequestException as exc:
-        print(f"[warn] token refresh not needed/skipped ({exc}); using stored token", file=sys.stderr)
+    except RuntimeError as exc:
+        print(f"[warn] token refresh skipped ({exc}); using stored token", file=sys.stderr)
     return token
 
 
@@ -115,12 +136,11 @@ def discover_ig_account_id(token: str) -> str:
     # (/me/accounts can return empty for pages owned via a Business Portfolio).
     page_id = env("PAGE_ID")
     if page_id:
-        resp = requests.get(
+        resp = api(
+            "GET",
             f"{BASE}/{page_id}",
             params={"fields": "id,name,instagram_business_account", "access_token": token},
-            timeout=30,
         )
-        resp.raise_for_status()
         page = resp.json()
         ig = page.get("instagram_business_account") or {}
         if ig.get("id"):
@@ -134,15 +154,14 @@ def discover_ig_account_id(token: str) -> str:
             "link to the PAGE (not the profile), then retry."
         )
 
-    resp = requests.get(
+    resp = api(
+        "GET",
         f"{BASE}/me/accounts",
         params={
             "fields": "id,name,instagram_business_account{id}",
             "access_token": token,
         },
-        timeout=30,
     )
-    resp.raise_for_status()
     pages = resp.json().get("data", [])
     for page in pages:
         ig = page.get("instagram_business_account") or {}
@@ -226,20 +245,18 @@ def create_container(
         params["media_type"] = media_type
     if caption:
         params["caption"] = caption
-    resp = requests.post(f"{BASE}/{ig_id}/media", params=params, timeout=30)
-    resp.raise_for_status()
+    resp = api("POST", f"{BASE}/{ig_id}/media", params=params)
     return resp.json()["id"]
 
 
 def wait_until_ready(container_id: str, token: str, timeout: int = 90) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
-        resp = requests.get(
+        resp = api(
+            "GET",
             f"{BASE}/{container_id}",
             params={"fields": "status_code", "access_token": token},
-            timeout=30,
         )
-        resp.raise_for_status()
         status = resp.json().get("status_code", "")
         print(f"[...] container status: {status}")
         if status == "FINISHED":
@@ -252,8 +269,7 @@ def wait_until_ready(container_id: str, token: str, timeout: int = 90) -> bool:
 
 def publish_container(ig_id: str, container_id: str, token: str) -> str:
     params = {"creation_id": container_id, "access_token": token}
-    resp = requests.post(f"{BASE}/{ig_id}/media_publish", params=params, timeout=30)
-    resp.raise_for_status()
+    resp = api("POST", f"{BASE}/{ig_id}/media_publish", params=params)
     return resp.json().get("id", "")
 
 
@@ -263,16 +279,15 @@ def publish_container(ig_id: str, container_id: str, token: str) -> str:
 def read_comments(token: str, ig_id: str, media_limit: int = 5) -> None:
     """List the most recent media and read their comments (requires the
     instagram_business_manage_comments permission on the token)."""
-    resp = requests.get(
+    resp = api(
+        "GET",
         f"{BASE}/{ig_id}/media",
         params={
             "fields": "id,caption,timestamp,media_type",
             "limit": str(media_limit),
             "access_token": token,
         },
-        timeout=30,
     )
-    resp.raise_for_status()
     media = resp.json().get("data", [])
     if not media:
         print("[!] No media found on this account.")
