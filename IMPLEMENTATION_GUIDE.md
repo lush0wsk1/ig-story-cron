@@ -224,8 +224,13 @@ El API **descarga** la imagen de una URL pública; no lee tu disco.
 
 - **Recomendado (gratis):** repo GitHub **público** + jsDelivr CDN:
   `PUBLIC_BASE_URL=https://cdn.jsdelivr.net/gh/USER/REPO@main/stories`
-- Formato por imagen: **JPG, 9:16 (1080×1920)** para stories, **1:1 o 4:5** para
-  feed, <8 MB.
+- **Formato único ganador: 1080×1350 (4:5)** → válido para **stories Y feed**
+  (verificado con el API: stories aceptan 9:16 y 4:5; feed acepta 4:5 y 1:1, NO
+  más alargado). Preparación automática con `python prepare.py` (centro-crop
+  desde `stories/originals/` → `stories/*-v2.jpg`).
+- Formato por imagen: **JPG, 1080×1920 (9:16)** para stories puras, **1:1 o 4:5**
+  para feed, <8 MB. Imágenes tipo 1:2 o más alargadas → error 36003
+  ("aspect ratio is not supported").
 - Para tests rápidos: `https://picsum.photos/1080/1920` (aleatoria; añade
   `/seed/algo` para imagen fija).
 
