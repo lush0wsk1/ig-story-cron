@@ -1,10 +1,33 @@
-name: Publish Instagram Story
+name: Publish Instagram
 
 on:
-  schedule:
-    # every 3 hours, at the top of the hour (UTC)
-    - cron: "0 */3 * * *"
-  workflow_dispatch: # manual "Run workflow" button
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Tipo de publicacion"
+        required: true
+        default: "stories"
+        type: choice
+        options:
+          - stories
+          - feed
+      image:
+        description: "Archivo en stories/ (vacío = slot del día según playlist)"
+        required: false
+        default: ""
+        type: string
+      caption:
+        description: "Texto extra (si está vacío se usa el caption del playlist)"
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: "Solo simular, no publicar"
+        required: false
+        default: false
+        type: boolean
+  # schedule:
+  #   - cron: "0 */3 * * *"   # descomenta esta parte cuando quieras automatizar
 
 permissions:
   contents: read
@@ -22,8 +45,11 @@ jobs:
       - name: Install dependencies
         run: pip install requests python-dotenv
 
-      - name: Publish this slot's story
-        run: python publish_story.py
+      - name: Publish
+        run: |
+          ARGS=""
+          if [ "$DRY_RUN" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python publish_story.py $ARGS
         env:
           APP_ID: ${{ secrets.APP_ID }}
           APP_SECRET: ${{ secrets.APP_SECRET }}
@@ -32,3 +58,7 @@ jobs:
           PAGE_ID: ${{ secrets.PAGE_ID }}
           PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
           PUBLISH_INTERVAL_H: "3"
+          IG_POST_MODE: ${{ inputs.mode }}
+          IG_POST_IMAGE: ${{ inputs.image }}
+          IG_POST_CAPTION: ${{ inputs.caption }}
+          DRY_RUN: ${{ inputs.dry_run }}

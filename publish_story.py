@@ -319,6 +319,15 @@ def main() -> None:
     parser.add_argument("--comments", action="store_true", help="read comments from recent posts and exit")
     args = parser.parse_args()
 
+    # Allow CI (GitHub Actions) to drive the run via environment variables.
+    if not args.image and env("IG_POST_IMAGE"):
+        args.image = env("IG_POST_IMAGE")
+    if not args.url and env("IG_POST_URL"):
+        args.url = env("IG_POST_URL")
+    if not args.caption and env("IG_POST_CAPTION"):
+        args.caption = env("IG_POST_CAPTION")
+    is_feed = args.feed or env("IG_POST_MODE").lower() == "feed"
+
     token = refresh_access_token()
     if args.refresh_only:
         print("[ok] token is now valid for the next 60 days")
@@ -348,8 +357,8 @@ def main() -> None:
 
     ig_id = discover_ig_account_id(token)
 
-    kind = "feed post" if args.feed else "Story"
-    media_type = None if args.feed else "STORIES"
+    kind = "feed post" if is_feed else "Story"
+    media_type = None if is_feed else "STORIES"
     caption = args.caption or picked_caption
 
     if args.dry_run:
@@ -357,11 +366,11 @@ def main() -> None:
         print(f"[dry-run] image_url={url}")
         if caption:
             print(f"[dry-run] caption={caption}")
-        if caption and not args.feed:
+        if caption and not is_feed:
             print("[i] note: stories don't display captions — the text is ignored for stories.")
         return
 
-    if caption and not args.feed:
+    if caption and not is_feed:
         print("[i] note: stories don't display captions; playlist caption ignored.")
 
     print(f"[+] publishing {filename} -> {kind} on IG account {ig_id}")
@@ -370,7 +379,7 @@ def main() -> None:
         url,
         token,
         media_type=media_type,
-        caption=caption if args.feed else None,
+        caption=caption if is_feed else None,
     )
     if not wait_until_ready(container_id, token):
         sys.exit("[ERROR] container never became ready — check the image URL / format (JPG).")
