@@ -1,0 +1,64 @@
+name: Publicar con IA (opencode)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: "Archivo en stories/ (vacío = slot del día según playlist)"
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: "Solo simular (igualmente genera el caption con IA)"
+        required: false
+        default: true
+        type: boolean
+  # schedule:
+  #   - cron: "0 3,9,15,21 * * *"   # descomenta cuando quieras automatizar
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Memoria de captions ya publicados (persiste entre runs, sin tocar git)
+      - uses: actions/cache@v4
+        with:
+          path: last_captions.json
+          key: last-captions-v1-${{ github.run_id }}
+          restore-keys: last-captions-v1-
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install requests python-dotenv
+
+      - name: Install opencode
+        run: npm install -g opencode-ai
+
+      - name: Verify opencode
+        run: opencode --version
+
+      - name: Generate & publish with AI
+        run: |
+          ARGS="--ai-caption"
+          if [ "$DRY_RUN" = "true" ]; then ARGS="$ARGS --dry-run"; fi
+          python publish_story.py $ARGS
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_SECRET: ${{ secrets.APP_SECRET }}
+          IG_USER_TOKEN: ${{ secrets.IG_USER_TOKEN }}
+          IG_BUSINESS_ACCOUNT_ID: ${{ secrets.IG_BUSINESS_ACCOUNT_ID }}
+          PAGE_ID: ${{ secrets.PAGE_ID }}
+          PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
+          IG_POST_MODE: feed
+          IG_POST_IMAGE: ${{ inputs.image }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          AI_MODEL: ${{ vars.AI_MODEL }}

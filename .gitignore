@@ -1,6 +1,10 @@
 # Local credentials — never commit
 .env
 
+# Runtime state (persisted via actions/cache, not in git)
+last_captions.json
+drafts/
+
 # macOS junk
 .DS_Store
 

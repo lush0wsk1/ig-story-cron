@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -321,6 +322,237 @@ def read_comments(token: str, ig_id: str, media_limit: int = 5) -> None:
 
 
 # --------------------------------------------------------------------------
+# auto-reply (AI replies) — FASE 1: solo borradores, nunca publica
+# --------------------------------------------------------------------------
+REPLIED_STATE = HERE / "replied.json"
+DRAFTS_DIR = HERE / "drafts"
+
+
+def _load_replied() -> list[str]:
+    if REPLIED_STATE.exists():
+        try:
+            return [line.strip() for line in REPLIED_STATE.read_text().splitlines() if line.strip()]
+        except Exception:
+            pass
+    return []
+
+
+def _mark_replied(comment_id: str) -> None:
+    seen = _load_replied()
+    if comment_id not in seen:
+        seen.append(comment_id)
+        REPLIED_STATE.write_text("\n".join(seen) + "\n")
+
+
+def fetch_recent_comments(token: str, ig_id: str, media_limit: int = 10) -> list[dict]:
+    """Collect comments from recent posts (account's own media only)."""
+    out: list[dict] = []
+    resp = api(
+        "GET",
+        f"{BASE}/{ig_id}/media",
+        params={"fields": "id,media_type", "limit": str(media_limit), "access_token": token},
+    )
+    for m in resp.json().get("data", []):
+        cr = requests.get(
+            f"{BASE}/{m['id']}/comments",
+            params={"fields": "id,text,username,timestamp", "limit": "50", "access_token": token},
+            timeout=30,
+        )
+        if not cr.ok:
+            continue
+        for c in cr.json().get("data", []):
+            c["media_id"] = m["id"]
+            out.append(c)
+    return out
+
+
+DEFAULT_VOICE = (
+    "Marca: 'Lopc Pro Spa' — tienda de olivos artificiales premium (decoración mediterránea). "
+    "Tono cercano, profesional y optimista, respondiendo en el idioma del comentario."
+)
+
+
+def ask_opencode(comment: dict, *, voice: str, model: str = "") -> str:
+    """Call `opencode run` with the comment and return the proposed reply."""
+    prompt = (
+        voice
+        + "\n"
+        + "Un seguidor ha comentado en Instagram. Redacta UNA respuesta breve (max 480 caracteres). "
+        + "Si el comentario es spam, insulto o no merece respuesta, responde exactamente: SKIP\n"
+        + "\nCOMENTARIO por @"
+        + comment.get("username", "?")
+        + ": "
+        + str(comment.get("text", ""))
+        + "\n\nRESPUESTA:"
+    )
+    cmd = ["opencode", "run"]
+    if model:
+        cmd += ["--model", model]
+    cmd += [prompt]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    except FileNotFoundError:
+        raise RuntimeError("opencode no está instalado o no está en el PATH")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("opencode superó el tiempo límite (120s)")
+    if proc.returncode != 0:
+        raise RuntimeError(f"opencode falló (exit {proc.returncode}): {proc.stderr.strip()[:300]}")
+    return proc.stdout.strip()
+
+
+def reply_draft(token: str, ig_id: str, *, publish: bool, model: str, voice: str) -> None:
+    """Scan recent comments and (if not already processed) draft an AI reply.
+
+    FASE 1 (default): writes drafts/<comment_id>.txt and never posts.
+    FASE 2 (--publish-reply): posts the reply to Instagram on the same run.
+    """
+    DRAFTS_DIR.mkdir(exist_ok=True)
+    seen = set(_load_replied())
+    comments = fetch_recent_comments(token, ig_id)
+    comments = [c for c in comments if c["id"] not in seen]
+    if not comments:
+        print("[info] sin comentarios nuevos que procesar.")
+        return
+
+    for c in comments:
+        cid = c["id"]
+        try:
+            reply = ask_opencode(c, voice=voice, model=model)
+        except RuntimeError as exc:
+            print(f"[warn] @{c.get('username')}: {exc}")
+            continue
+        _mark_replied(cid)
+
+        is_skip = reply.strip().upper() == "SKIP"
+        if publish and not is_skip:
+            message = reply.strip()[:480]
+            r = api("POST", f"{BASE}/{cid}/replies", params={"message": message, "access_token": token})
+            print(f"[OK] respondido a @{c.get('username')} (reply id {r.json().get('id')})")
+        else:
+            if is_skip:
+                print(f"[skip] @{c.get('username')}: sin respuesta (SKIP)")
+            draft_path = DRAFTS_DIR / f"{cid}.txt"
+            draft_path.write_text(
+                "@"
+                + str(c.get("username", "?"))
+                + " | "
+                + str(c.get("timestamp", ""))
+                + "\nCOM: "
+                + str(c.get("text", ""))
+                + "\nRESPUESTA PROPUESTA:\n"
+                + reply.strip()[:480]
+                + "\n"
+            )
+            print(f"[borrador] @{c.get('username')} -> {draft_path.name}")
+
+
+# --------------------------------------------------------------------------
+# AI writer: generate the caption with opencode (tags + memory + fallback)
+# --------------------------------------------------------------------------
+def load_images_index() -> dict:
+    """images.json: { "file.jpg": { "desc": "...", "tags": [...] } }"""
+    path = HERE / "images.json"
+    if path.exists():
+        try:
+            data = json.loads(path.read_text())
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            pass
+    return {}
+
+
+def load_last_captions(keep: int = 20) -> list[str]:
+    path = HERE / "last_captions.json"
+    if path.exists():
+        try:
+            items = json.loads(path.read_text())
+            if isinstance(items, list):
+                return items[-keep:]
+        except Exception:
+            pass
+    return []
+
+
+def save_last_captions(caption: str, keep: int = 20) -> None:
+    if not caption:
+        return
+    path = HERE / "last_captions.json"
+    items = load_last_captions(keep)
+    if caption not in items:
+        items.append(caption)
+        path.write_text(json.dumps(items[-keep:], ensure_ascii=False, indent=2))
+
+
+def build_ai_prompt(filename: str, desc: str, tags: list[str], last: list[str]) -> str:
+    voice = env("AI_BRAND_VOICE")
+    if not voice:
+        voice = (
+            "Eres el community manager de 'Lopc Pro Spa', tienda de arboles artificiales "
+            "de olivo premium (decoracion mediterranea). Escribes captions de Instagram "
+            "para una cuenta de negocio con tono cercano, natural y optimista."
+        )
+    tags_str = ", ".join(tags) if tags else "(sin tags)"
+    last_str = "; ".join(last[-5:]) if last else "ninguno"
+    return (
+        voice
+        + "\n\nCRITERIOS: maximo 400 caracteres, en espanol, tono de persona real, "
+        + "solo 1-3 hashtags al final.\n"
+        + f"FOTO A PUBLICAR: {filename}\n"
+        + f"Descripcion: {desc}\n"
+        + f"Tags de la foto: {tags_str}\n\n"
+        + "DATOS DEL PRODUCTO (usa solo estos, no inventes): sin riego ni sol, dura "
+        + "5-8 anos, 160 cm, materiales ecologicos, hojas 'natural touch', tronco de "
+        + "polietileno y acero galvanizado, apto interior/exteriores protegidos, "
+        + "ideal bodas, oficinas y regalos.\n\n"
+        + "INSTRUCCIONES:\n"
+        + "1. Escribe un caption NUEVO usando como eje los tags de esta foto.\n"
+        + "2. Varia la estructura: elige un gancho aleatorio (pregunta retorica, dato "
+        + "curioso, emocion o mini-historia), desarrollo basado en los tags, y cierra "
+        + "con un CTA rotando entre 'Escribenos por DM', 'Comenta cual te gusta' e "
+        + f"'Ideal para {tags[0] if tags else 'decoracion'}'.\n"
+        + f"3. NO repitas frases ni openings de estos captions anteriores: {last_str}\n"
+        + "4. Devuelve SOLO el caption, sin comillas ni prefijos."
+    )
+
+
+def generate_caption(filename: str) -> str:
+    """Call `opencode run` with the built prompt. Raises RuntimeError on any failure."""
+    index = load_images_index().get(filename, {})
+    desc = (index.get("desc") or "").strip() or filename
+    tags = index.get("tags") or []
+    prompt = build_ai_prompt(filename, desc, tags, load_last_captions())
+
+    cmd = ["opencode", "run"]
+    model = env("AI_MODEL")
+    if model:
+        cmd += ["--model", model]
+    cmd += [prompt]
+
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    except FileNotFoundError:
+        raise RuntimeError("opencode no esta instalado o no esta en el PATH")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("opencode supero el limite (180s)")
+    if proc.returncode != 0:
+        raise RuntimeError(f"opencode fallo (exit {proc.returncode}): {proc.stderr.strip()[:200]}")
+    text = proc.stdout.strip()
+    if not text:
+        raise RuntimeError("opencode devolvio una respuesta vacia")
+    return text[:2200]
+
+
+def fallback_caption(filename: str) -> str:
+    index = load_images_index().get(filename, {})
+    tags = index.get("tags") or []
+    tag = tags[0] if tags else "decoracion mediterranea"
+    return (
+        "Nuestro olivo artificial de 160 cm: sin riego, sin sol, siempre verde. "
+        f"Ideal para {tag}. Escribenos por DM. 🌿 #olivoartificial #decor"
+    )
+
+
+# --------------------------------------------------------------------------
 # main
 # --------------------------------------------------------------------------
 def main() -> None:
@@ -330,6 +562,8 @@ def main() -> None:
     parser.add_argument("--image", help="publish a specific file from stories/playlist.json (uses its caption)")
     parser.add_argument("--feed", action="store_true", help="publish as a feed post (grid) instead of a Story")
     parser.add_argument("--caption", help="caption text (feed posts)")
+    parser.add_argument("--ai-caption", action="store_true", help="generate the caption with opencode (AI writer)")
+    parser.add_argument("--ai-gen-only", action="store_true", help="generate the caption and exit (no publish)")
     parser.add_argument("--refresh-only", action="store_true", help="only refresh the token and exit")
     parser.add_argument("--comments", action="store_true", help="read comments from recent posts and exit")
     args = parser.parse_args()
@@ -376,6 +610,21 @@ def main() -> None:
     media_type = None if is_feed else "STORIES"
     caption = args.caption or picked_caption
 
+    ai_used = False
+    if args.ai_caption and is_feed and not args.caption:
+        try:
+            caption = generate_caption(filename)
+            print("[IA] caption generado con opencode")
+            ai_used = True
+        except RuntimeError as exc:
+            print(f"[warn] opencode: {exc}; usare caption de respaldo")
+            caption = fallback_caption(filename)
+
+    if args.ai_gen_only:
+        print("CAPTION GENERADO:")
+        print(caption)
+        return
+
     if args.dry_run:
         print(f"[dry-run] would publish '{filename}' as a {kind} on IG account {ig_id}")
         print(f"[dry-run] image_url={url}")
@@ -399,6 +648,8 @@ def main() -> None:
     if not wait_until_ready(container_id, token):
         sys.exit("[ERROR] container never became ready — check the image URL / format (JPG).")
     post_id = publish_container(ig_id, container_id, token)
+    if is_feed and ai_used and caption:
+        save_last_captions(caption)
     print(f"[OK] {kind} published! (post id: {post_id})")
 
 

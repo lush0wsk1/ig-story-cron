@@ -168,6 +168,8 @@ python publish_story.py --url https://…/imagen.jpg   # publica esa imagen conc
 python publish_story.py --dry-run                    # simula sin publicar
 python publish_story.py --refresh-only               # solo refresca el token
 python publish_story.py --comments                   # lee comentarios recientes
+python publish_story.py --ai-caption --feed          # caption generado por opencode (AI writer)
+python publish_story.py --ai-caption --ai-gen-only   # solo generar el caption, sin publicar
 ```
 
 ### Cron
@@ -188,6 +190,23 @@ python publish_story.py --comments                   # lee comentarios recientes
 - Lectura de comentarios (`--comments`).
 - **Imagen ↔ texto**: cada entrada de `stories/playlist.json` puede llevar su
   propio `caption` (se usa en feed; las stories no muestran captions).
+- **AI writer (`--ai-caption`)** ✅: genera el caption con opencode a partir de
+  los tags de la foto (`images.json`), con memoria (`last_captions.json` vía
+  cache) para no repetir frases, y fallback si opencode falla.
+
+### 🚧 AI writer — cómo corre en GitHub Actions
+Workflow **`ai-publish.yml`** (disparo manual, cron comentado):
+1. Checkout del repo (con `images.json` + fotos).
+2. **Cache** para `last_captions.json` (persistencia sin commits).
+3. Instala **opencode** en el runner (`npm install -g opencode-ai`).
+4. Corre `python publish_story.py --ai-caption [--dry-run]` con:
+   - `DEEPSEEK_API_KEY` → **secret** del repo (imprescindible).
+   - `AI_MODEL` → variable del repo (`vars.AI_MODEL`), opcional
+     ("provider/model"; si está vacío usa la config por defecto de opencode).
+   - `IG_POST_MODE=feed`, `IG_POST_IMAGE` (input opcional del workflow).
+
+> ⚠️ Sin `DEEPSEEK_API_KEY` el runner fallará en opencode → el script usa el
+> **caption de respaldo** (no se cae el post, pero pierde el toque IA).
 
 ### 🚧 Diseño: auto-respuesta con IA (`--reply-new`)
 Responder comentarios usando opencode + modelo económico:
