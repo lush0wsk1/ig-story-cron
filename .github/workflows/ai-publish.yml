@@ -13,8 +13,10 @@ on:
         required: false
         default: true
         type: boolean
-  # schedule:
-  #   - cron: "0 3,9,15,21 * * *"   # descomenta cuando quieras automatizar
+  schedule:
+    # Una publicación al día (15:00 UTC ≈ 12:00/11:00 en Chile).
+    # El cron publica SIEMPRE de verdad (ignora dry_run manual).
+    - cron: "0 15 * * *"
 
 permissions:
   contents: read
@@ -60,7 +62,8 @@ jobs:
           PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
           IG_POST_MODE: feed
           IG_POST_IMAGE: ${{ inputs.image }}
-          DRY_RUN: ${{ inputs.dry_run }}
+          DRY_RUN: ${{ github.event_name == 'schedule' && 'false' || inputs.dry_run }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           AI_MODEL: ${{ vars.AI_MODEL }}
+          PUBLISH_INTERVAL_H: "24"   # rotación diaria: una imagen por día

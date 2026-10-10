@@ -212,7 +212,9 @@ fallbacks en código**: si falta el archivo, el script falla a propósito).
 Placeholders: `{voice} {filename} {desc} {tags} {last_captions}` (captions) y
 `{voice} {username} {text}` (replies).
 
-Workflow **`ai-publish.yml`** (disparo manual, cron comentado):
+Workflow **`ai-publish.yml`** (disparo manual + **cron 1 vez/día** a las 15:00 UTC;
+rotación `PUBLISH_INTERVAL_H=24` → una imagen distinta por día; el **cron publica
+de verdad**, los lanzamientos manuales pueden usar `dry_run` para simular):
 1. Checkout del repo (con `images.json` + fotos).
 2. **Cache** para `last_captions.json` (persistencia sin commits).
 3. Instala **opencode** en el runner (`npm install -g opencode-ai`).
