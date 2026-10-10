@@ -200,17 +200,16 @@ Workflow **`ai-publish.yml`** (disparo manual, cron comentado):
 2. **Cache** para `last_captions.json` (persistencia sin commits).
 3. Instala **opencode** en el runner (`npm install -g opencode-ai`).
 4. Corre `python publish_story.py --ai-caption [--dry-run]` con:
-   - `OPENCODE_API_KEY` → **secret** del repo (tu key de OpenCode Go;
-     catálogo oficial usa `opencode-go/...` sin config extra).
-   - `AI_MODEL` → variable del repo: `opencode-go/mimo-v2.6-flash`
-     (~$0.14/$0.28 por M). Alternativa BYOK: `deepseek/deepseek-v4-flash`
-     + secret `DEEPSEEK_API_KEY` (opencode.json con `{env:DEEPSEEK_API_KEY}`).
+   - `AI_MODEL` → variable del repo: **`opencode/mimo-v2.6-flash-free`**
+     (modelo **gratis** integrado; NO requiere ninguna key para arrancar).
+   - Secreto `OPENCODE_API_KEY` (OpenCode Go) o `DEEPSEEK_API_KEY` (BYOK):
+     **opcionales**, solo si quieres un modelo de pago más potente.
    - `IG_POST_MODE=feed`, `IG_POST_IMAGE` (input opcional del workflow).
 
-> ⚠️ Sin `OPENCODE_API_KEY` (ni `DEEPSEEK_API_KEY`) el runner fallará en
-> opencode → el script usa el **caption de respaldo** (no se cae el post, pero
-> pierde el toque IA). El id correcto de DeepSeek es `deepseek/deepseek-v4-flash`
-> (los viejos `deepseek-chat`/`deepseek-reasoner` se retiraron el 2026-07-24).
+> 💡 Modelos gratis verificados (`opencode ... -free`, $0, sin key):
+> `opencode/mimo-v2.6-flash-free`, `opencode/ling-3.1-flash-free`.
+> Si no deja generar, rescata con `AI_MODEL=opencode-go/mimo-v2.6-flash`
+> (Go, ~$0.14/$0.28) + secret `OPENCODE_API_KEY`.
 
 ### 🚧 Diseño: auto-respuesta con IA (`--reply-new`)
 Responder comentarios usando opencode + modelo económico:
