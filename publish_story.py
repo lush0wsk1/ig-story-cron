@@ -524,37 +524,6 @@ def product_context(filename: str) -> dict:
     }
 
 
-def product_ml_link(filename: str) -> str:
-    """Mercado Libre link of the product that the image belongs to ("" if none)."""
-    index = load_images_index()
-    slug = (index.get(filename, {})).get("product") or "olivo"
-    prod = load_products().get(slug, {})
-    return (prod.get("links") or {}).get("mercadolibre", "").strip()
-
-
-def update_bio_website(token: str, ig_id: str, website: str) -> None:
-    """Sync the profile 'website' (the bio link) with the product just posted.
-
-    Requires the `instagram_business_manage_profile` permission on the token.
-    Reads the current value first to avoid pointless writes (rate limits).
-    """
-    try:
-        current = (
-            api("GET", f"{BASE}/{ig_id}", params={"fields": "website", "access_token": token})
-            .json()
-            .get("website")
-            or ""
-        )
-    except RuntimeError as exc:
-        print(f"[warn] no se pudo leer el link actual de la bio ({exc})")
-        current = ""
-    if (current or "").rstrip("/") == website.rstrip("/"):
-        print(f"[ok] la bio ya apunta a {website} — sin cambios")
-        return
-    resp = api("POST", f"{BASE}/{ig_id}", params={"website": website, "access_token": token})
-    print(f"[OK] bio actualizada -> {website} (HTTP {resp.status_code})")
-
-
 DEFAULT_WRITER_VOICE = (
     "Eres el community manager de 'Lopc Pro Spa', tienda de arboles artificiales "
     "de olivo premium (decoracion mediterranea). Escribes captions de Instagram "
@@ -692,7 +661,6 @@ def main() -> None:
     parser.add_argument("--comments", action="store_true", help="read comments from recent posts and exit")
     parser.add_argument("--reply-new", action="store_true", help="draft AI reply for new comments (FASE 1, no publish)")
     parser.add_argument("--publish-reply", action="store_true", help="with --reply-new: post the replies")
-    parser.add_argument("--sync-bio", action="store_true", help="update the bio 'website' link to the product's Mercado Libre URL (feed only)")
     args = parser.parse_args()
 
     # Allow CI (GitHub Actions) to drive the run via environment variables.
@@ -703,7 +671,6 @@ def main() -> None:
     if not args.caption and env("IG_POST_CAPTION"):
         args.caption = env("IG_POST_CAPTION")
     is_feed = args.feed or env("IG_POST_MODE").lower() == "feed"
-    sync_bio = args.sync_bio or env("IG_POST_SYNC_BIO").lower() == "true"
 
     token = refresh_access_token()
     if args.refresh_only:
@@ -787,15 +754,6 @@ def main() -> None:
     post_id = publish_container(ig_id, container_id, token)
     if is_feed and ai_used and caption:
         save_last_captions(caption)
-    if is_feed and sync_bio:
-        link = product_ml_link(filename)
-        if link:
-            try:
-                update_bio_website(token, ig_id, link)
-            except RuntimeError as exc:
-                print(f"[warn] no se pudo actualizar la bio ({exc})")
-        else:
-            print("[i] sync bio pedido, pero el producto no tiene links.mercadolibre en products.json")
     print(f"[OK] {kind} published! (post id: {post_id})")
 
 

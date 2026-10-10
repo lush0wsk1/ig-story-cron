@@ -203,10 +203,6 @@ python publish_story.py --ai-caption --ai-gen-only   # solo generar el caption, 
 - **Guarda de cuota diaria** ✅: consulta `content_publishing_limit` antes de
   publicar y cancela el post si se llegó al tope (25/día; baja el techo con
   `MAX_PUBLISHES_PER_DAY`).
-- **Sync bio link (auto)** ✅: al publicar **feed**, actualiza el campo "website"
-  de la bio al `links.mercadolibre` del producto publicado (nada de
-  "primer comentario"). Requiere el permiso `instagram_business_manage_profile`
-  → regenerar token con `IG_SCOPES` + actualizar el secret.
 
 ### 🚧 AI writer — cómo corre en GitHub Actions
 Los prompts viven en **`prompts/caption.md`** y **`prompts/reply.md`**

@@ -13,11 +13,6 @@ on:
         required: false
         default: true
         type: boolean
-      sync_bio:
-        description: "Actualizar el link de la bio (website) al link ML del producto del feed"
-        required: false
-        default: true
-        type: boolean
   # schedule:
   #   - cron: "0 3,9,15,21 * * *"   # descomenta cuando quieras automatizar
 
@@ -65,7 +60,6 @@ jobs:
           PUBLIC_BASE_URL: ${{ secrets.PUBLIC_BASE_URL }}
           IG_POST_MODE: feed
           IG_POST_IMAGE: ${{ inputs.image }}
-          IG_POST_SYNC_BIO: ${{ inputs.sync_bio }}
           DRY_RUN: ${{ inputs.dry_run }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
