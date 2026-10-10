@@ -201,12 +201,15 @@ Workflow **`ai-publish.yml`** (disparo manual, cron comentado):
 3. Instala **opencode** en el runner (`npm install -g opencode-ai`).
 4. Corre `python publish_story.py --ai-caption [--dry-run]` con:
    - `DEEPSEEK_API_KEY` → **secret** del repo (imprescindible).
-   - `AI_MODEL` → variable del repo (`vars.AI_MODEL`), opcional
-     ("provider/model"; si está vacío usa la config por defecto de opencode).
+   - `AI_MODEL` → variable del repo: `deepseek/deepseek-v4-flash`
+     (precio oficial $0.14/$0.28 por M; el modelo BYOK + `opencode.json`
+     con `{env:DEEPSEEK_API_KEY}` ya está commiteado — funciona en CI sin login).
    - `IG_POST_MODE=feed`, `IG_POST_IMAGE` (input opcional del workflow).
 
 > ⚠️ Sin `DEEPSEEK_API_KEY` el runner fallará en opencode → el script usa el
 > **caption de respaldo** (no se cae el post, pero pierde el toque IA).
+> El id correcto para DeepSeek es `deepseek/deepseek-v4-flash` (los viejos
+> `deepseek-chat`/`deepseek-reasoner` se retiraron el 2026-07-24).
 
 ### 🚧 Diseño: auto-respuesta con IA (`--reply-new`)
 Responder comentarios usando opencode + modelo económico:
