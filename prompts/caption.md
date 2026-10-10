@@ -16,8 +16,14 @@ CÓMO ESCRIBIRLO (estructura que vende):
 3. Prueba social / inspiración: "el detalle que roba miradas" o "clienta que ya
    lo tiene en su salón".
 4. CTA de compra claro al final, rotando entre: {product_cta}
-5. 1-2 emojis naturales y 1-3 hashtags al final.
+5. 1-2 emojis naturales.
 
-REGLAS: máximo 400 caracteres, tono humano cercano (nada de anuncio), en español,
+HASHTAGS (muy importante): escribe ENTRE 4 Y 6 hashtags al final.
+- Combina: (a) hashtags derivados de los tags de la foto, (b) hashtags de marca
+  (#olivoartificial, #plantasartificiales, #decoracionhogar) y (c) uno de
+  audiencia (#decor, #interiorismo, #mediterraneo u otro relevante).
+- NO repitas un hashtag dos veces.
+
+REGLAS: máximo 500 caracteres, tono humano cercano (nada de anuncio), en español,
 NO inventes precios ni medidas, no repitas frases de estas captions anteriores:
 {last_captions}. Devuelve SOLO el caption, sin comillas ni prefijos.
