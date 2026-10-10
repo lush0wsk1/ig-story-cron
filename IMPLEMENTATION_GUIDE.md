@@ -201,6 +201,12 @@ python publish_story.py --ai-caption --ai-gen-only   # solo generar el caption, 
   `MAX_PUBLISHES_PER_DAY`).
 
 ### 🚧 AI writer — cómo corre en GitHub Actions
+Los prompts viven en **`prompts/caption.md`** y **`prompts/reply.md`**
+(editables como archivos de texto; el script los lee SIEMPRE — **no hay
+fallbacks en código**: si falta el archivo, el script falla a propósito).
+Placeholders: `{voice} {filename} {desc} {tags} {last_captions}` (captions) y
+`{voice} {username} {text}` (replies).
+
 Workflow **`ai-publish.yml`** (disparo manual, cron comentado):
 1. Checkout del repo (con `images.json` + fotos).
 2. **Cache** para `last_captions.json` (persistencia sin commits).

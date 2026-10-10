@@ -376,16 +376,12 @@ DEFAULT_VOICE = (
 
 def ask_opencode(comment: dict, *, voice: str, model: str = "") -> str:
     """Call `opencode run` with the comment and return the proposed reply."""
-    prompt = (
-        voice
-        + "\n"
-        + "Un seguidor ha comentado en Instagram. Redacta UNA respuesta breve (max 480 caracteres). "
-        + "Si el comentario es spam, insulto o no merece respuesta, responde exactamente: SKIP\n"
-        + "\nCOMENTARIO por @"
-        + comment.get("username", "?")
-        + ": "
-        + str(comment.get("text", ""))
-        + "\n\nRESPUESTA:"
+    template = load_prompt("reply.md")
+    prompt = _apply(
+        template,
+        voice=voice,
+        username=comment.get("username") or "?",
+        text=str(comment.get("text", "")),
     )
     cmd = ["opencode", "run"]
     if model:
@@ -492,35 +488,54 @@ def save_last_captions(caption: str, keep: int = 20) -> None:
         path.write_text(json.dumps(items[-keep:], ensure_ascii=False, indent=2))
 
 
+DEFAULT_WRITER_VOICE = (
+    "Eres el community manager de 'Lopc Pro Spa', tienda de arboles artificiales "
+    "de olivo premium (decoracion mediterranea). Escribes captions de Instagram "
+    "para una cuenta de negocio con tono cercano, natural y optimista."
+)
+
+
+def load_prompt(name: str) -> str:
+    """Load a prompt template from prompts/ — REQUIRED, no code fallbacks.
+
+    Returns the template text; exits with a clear error if the file is
+    missing/empty so a stale or missing prompt never silently ships.
+    """
+    path = HERE / "prompts" / name
+    if path.exists():
+        try:
+            text = path.read_text(encoding="utf-8").strip()
+            if text:
+                return text
+        except Exception as exc:
+            sys.exit(f"[ERROR] no se pudo leer prompts/{name}: {exc}")
+    sys.exit(
+        f"[ERROR] falta prompts/{name} — crealo/editalo (o sincroniza el repo). "
+        "Sin el archivo no se genera texto."
+    )
+
+
+def _apply(prompt: str, **kw) -> str:
+    """Substitute {key} placeholders with .replace (robusto ante llaves raras)."""
+    for key, value in kw.items():
+        prompt = prompt.replace("{" + key + "}", str(value))
+    return prompt
+
+
 def build_ai_prompt(filename: str, desc: str, tags: list[str], last: list[str]) -> str:
-    voice = env("AI_BRAND_VOICE")
-    if not voice:
-        voice = (
-            "Eres el community manager de 'Lopc Pro Spa', tienda de arboles artificiales "
-            "de olivo premium (decoracion mediterranea). Escribes captions de Instagram "
-            "para una cuenta de negocio con tono cercano, natural y optimista."
-        )
+    """Build the AI-writer prompt from prompts/caption.md (required)."""
+    voice = env("AI_BRAND_VOICE") or DEFAULT_WRITER_VOICE
     tags_str = ", ".join(tags) if tags else "(sin tags)"
     last_str = "; ".join(last[-5:]) if last else "ninguno"
-    return (
-        voice
-        + "\n\nCRITERIOS: maximo 400 caracteres, en espanol, tono de persona real, "
-        + "solo 1-3 hashtags al final.\n"
-        + f"FOTO A PUBLICAR: {filename}\n"
-        + f"Descripcion: {desc}\n"
-        + f"Tags de la foto: {tags_str}\n\n"
-        + "DATOS DEL PRODUCTO (usa solo estos, no inventes): sin riego ni sol, dura "
-        + "5-8 anos, 160 cm, materiales ecologicos, hojas 'natural touch', tronco de "
-        + "polietileno y acero galvanizado, apto interior/exteriores protegidos, "
-        + "ideal bodas, oficinas y regalos.\n\n"
-        + "INSTRUCCIONES:\n"
-        + "1. Escribe un caption NUEVO usando como eje los tags de esta foto.\n"
-        + "2. Varia la estructura: elige un gancho aleatorio (pregunta retorica, dato "
-        + "curioso, emocion o mini-historia), desarrollo basado en los tags, y cierra "
-        + "con un CTA rotando entre 'Escribenos por DM', 'Comenta cual te gusta' e "
-        + f"'Ideal para {tags[0] if tags else 'decoracion'}'.\n"
-        + f"3. NO repitas frases ni openings de estos captions anteriores: {last_str}\n"
-        + "4. Devuelve SOLO el caption, sin comillas ni prefijos."
+
+    template = load_prompt("caption.md")
+    return _apply(
+        template,
+        voice=voice,
+        filename=filename,
+        desc=desc,
+        tags=tags_str,
+        last_captions=last_str,
     )
 
 
