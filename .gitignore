@@ -3,6 +3,7 @@
 
 # Runtime state (persisted via actions/cache, not in git)
 last_captions.json
+replied.json
 drafts/
 
 # macOS junk

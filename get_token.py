@@ -39,7 +39,7 @@ PORT = 9876
 REDIRECT = f"http://localhost:{PORT}/callback"
 SCOPE = os.getenv("IG_SCOPES") or (
     "instagram_basic,"
-    "instagram_content_publishing,"
+    "instagram_content_publish,"
     "pages_read_engagement,"
     "pages_show_list"
 )
@@ -125,7 +125,14 @@ def main() -> None:
         },
         timeout=30,
     )
-    resp.raise_for_status()
+    if not resp.ok:
+        # Never echo the full URL here: it contains client_secret.
+        try:
+            detail = resp.json().get("error", {}).get("message", "") or resp.text[:300]
+        except Exception:
+            detail = resp.text[:300]
+        print(f"[ERROR] el canje del codigo fallo (HTTP {resp.status_code}): {detail}")
+        return
     token = resp.json()["access_token"]
 
     write_env("IG_USER_TOKEN", token)

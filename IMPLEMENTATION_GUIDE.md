@@ -193,6 +193,12 @@ python publish_story.py --ai-caption --ai-gen-only   # solo generar el caption, 
 - **AI writer (`--ai-caption`)** ✅: genera el caption con opencode a partir de
   los tags de la foto (`images.json`), con memoria (`last_captions.json` vía
   cache) para no repetir frases, y fallback si opencode falla.
+- **AI replies (`--reply-new`)** ✅: borrador (FASE 1) de respuesta a comentarios
+  con opencode (guardados en `drafts/`, sin publicar); `--publish-reply` activa
+  la FASE 2. Un comentario se marca procesado SOLO tras gestionarse bien.
+- **Guarda de cuota diaria** ✅: consulta `content_publishing_limit` antes de
+  publicar y cancela el post si se llegó al tope (25/día; baja el techo con
+  `MAX_PUBLISHES_PER_DAY`).
 
 ### 🚧 AI writer — cómo corre en GitHub Actions
 Workflow **`ai-publish.yml`** (disparo manual, cron comentado):
