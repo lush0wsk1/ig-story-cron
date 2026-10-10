@@ -1,14 +1,18 @@
 {
-  "olivo1-v2.jpg": {
-    "desc": "Plano general del olivo artificial de 160 cm en un salon luminoso",
-    "tags": ["mediterraneo", "160cm", "salon", "realista", "sin mantenimiento"]
+  "olivo_detalle_closeup.jpg": {
+    "desc": "Primer plano detallado de las hojas con textura 'natural touch' y las olivas realistas del árbol.",
+    "tags": ["natural touch", "detalle", "realista", "calidad premium", "olivas"]
   },
-  "olivopremium1-v2.jpg": {
-    "desc": "Detalle de las hojas natural touch y el tronco de polietileno",
-    "tags": ["hojas natural touch", "detalle", "oficina", "acero galvanizado"]
+  "olivo_ambiente_sala.jpg": {
+    "desc": "Plano general del olivo artificial de gran altura decorando un rincón de sala o biblioteca con luz natural.",
+    "tags": ["sala", "decoracion hogar", "gran altura", "luz natural", "estilo mediterraneo"]
   },
-  "olivopremium2-v2.jpg": {
-    "desc": "Olivo artificial ambientando una mesa de evento",
-    "tags": ["boda", "eventos", "regalo", "eco-friendly", "5-8 anos"]
+  "olivo_ambiente_reloj.jpg": {
+    "desc": "Olivo artificial de diseño esbelto ambientando un espacio minimalista junto a un reloj de pared.",
+    "tags": ["minimalista", "estilo nordico", "pared blanca", "decoracion interior", "elegante"]
+  },
+  "olivo_fondo_blanco.png": {
+    "desc": "Fotografía de producto del olivo artificial sobre fondo blanco, mostrando el tronco texturizado y la copa frondosa.",
+    "tags": ["fondo blanco", "producto", "tronco texturizado", "catalogo", "envios disponibles"]
   }
 }
