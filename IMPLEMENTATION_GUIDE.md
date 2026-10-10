@@ -46,7 +46,8 @@ instagram-story-cron/
 ├── media/                    # imágenes + playlist.json (orden de rotación)
 ├── add_image.py              # añadir una foto: recorte 4:5 + playlist + tags (1 comando)
 ├── products.json             # catálogo: beneficios/CTAs para la IA + links.mercadolibre
-│                             # (varios anuncios ML = un link en bio multi-enlace con todos)
+│                             # (links = datos intencionales para "share" futuro:
+│                             #  auto-respuesta por DM, multi-link en bio, sticker stories)
 ├── prompts/                  # prompts editables (caption.md, reply.md) — obligatorios
 ├── .github/workflows/publish-stories.yml   # cron GitHub Actions
 └── IMPLEMENTATION_GUIDE.md   # este archivo
