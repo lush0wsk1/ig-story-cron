@@ -28,7 +28,7 @@
 publish_story.py ──► tokens: refresh fb_exchange_token (long-lived 60d)
      │
      ├── pick_image(): rotación determinista por slot de 3h
-     │        (stories/playlist.json → filename → PUBLIC_BASE_URL/…/file.jpg)
+     │        (media/playlist.json → filename → PUBLIC_BASE_URL/…/file.jpg)
      │
      └── publicación (2 pasos siempre):
           1) POST /{ig-id}/media            (crea contenedor)
@@ -43,7 +43,10 @@ instagram-story-cron/
 ├── get_token.py              # genera token de usuario con permisos (OAuth localhost)
 ├── .env                      # credenciales (NO versionar)
 ├── .env.example              # plantilla documentada
-├── stories/                  # imágenes + playlist.json orden de rotación
+├── media/                    # imágenes + playlist.json (orden de rotación)
+├── add_image.py              # añadir una foto: recorte 4:5 + playlist + tags (1 comando)
+├── products.json             # catálogo de productos (beneficios/CTAs para la IA)
+├── prompts/                  # prompts editables (caption.md, reply.md) — obligatorios
 ├── .github/workflows/publish-stories.yml   # cron GitHub Actions
 └── IMPLEMENTATION_GUIDE.md   # este archivo
 ```
@@ -188,7 +191,7 @@ python publish_story.py --ai-caption --ai-gen-only   # solo generar el caption, 
 ### ✅ Hecho
 - Stories cada N horas. · Feed posts (`--feed` + `--caption`).
 - Lectura de comentarios (`--comments`).
-- **Imagen ↔ texto**: cada entrada de `stories/playlist.json` puede llevar su
+- **Imagen ↔ texto**: cada entrada de `media/playlist.json` puede llevar su
   propio `caption` (se usa en feed; las stories no muestran captions).
 - **AI writer (`--ai-caption`)** ✅: genera el caption con opencode a partir de
   los tags de la foto (`images.json`), con memoria (`last_captions.json` vía
@@ -257,11 +260,11 @@ IG comenta → --reply-new lee comentarios nuevos (GET /{ig-id}/comments)
 El API **descarga** la imagen de una URL pública; no lee tu disco.
 
 - **Recomendado (gratis):** repo GitHub **público** + jsDelivr CDN:
-  `PUBLIC_BASE_URL=https://cdn.jsdelivr.net/gh/USER/REPO@main/stories`
+  `PUBLIC_BASE_URL=https://cdn.jsdelivr.net/gh/USER/REPO@main/media`
 - **Formato único ganador: 1080×1350 (4:5)** → válido para **stories Y feed**
   (verificado con el API: stories aceptan 9:16 y 4:5; feed acepta 4:5 y 1:1, NO
-  más alargado). Preparación automática con `python prepare.py` (centro-crop
-  desde `stories/originals/` → `stories/*-v2.jpg`).
+  más alargado). Añadir fotos: `python add_image.py foto.jpg --product olivo`
+  (recorta, nombra, playlist, tags y git add en un solo paso).
 - Formato por imagen: **JPG, 1080×1920 (9:16)** para stories puras, **1:1 o 4:5**
   para feed, <8 MB. Imágenes tipo 1:2 o más alargadas → error 36003
   ("aspect ratio is not supported").

@@ -12,7 +12,7 @@ on:
           - stories
           - feed
       image:
-        description: "Archivo en stories/ (vacío = slot del día según playlist)"
+        description: "Archivo en media/ (vacío = slot del día según playlist)"
         required: false
         default: ""
         type: string

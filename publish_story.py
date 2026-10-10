@@ -186,10 +186,10 @@ def discover_ig_account_id(token: str) -> str:
 # rotation
 # --------------------------------------------------------------------------
 def load_entries() -> list[tuple[str, str | None]]:
-    """Load (filename, caption) pairs from stories/playlist.json."""
-    playlist_path = HERE / "stories" / "playlist.json"
+    """Load (filename, caption) pairs from media/playlist.json."""
+    playlist_path = HERE / "media" / "playlist.json"
     if not playlist_path.exists():
-        sys.exit("[ERROR] stories/playlist.json not found — create it with your image names.")
+        sys.exit("[ERROR] media/playlist.json not found — create it with your image names.")
     playlist = json.loads(playlist_path.read_text())
 
     entries: list[tuple[str, str | None]] = []
@@ -203,7 +203,7 @@ def load_entries() -> list[tuple[str, str | None]]:
             if name:
                 entries.append((name, None))
     if not entries:
-        sys.exit("[ERROR] stories/playlist.json is empty — add your image file names.")
+        sys.exit("[ERROR] media/playlist.json is empty — add your image file names.")
     return entries
 
 
@@ -214,7 +214,7 @@ def image_url_for(filename: str) -> str:
             "[ERROR] PUBLIC_BASE_URL is not set.\n"
             "  The Instagram API needs a PUBLIC url for every image (it fetches the file itself).\n"
             "  Example with a public GitHub repo + jsDelivr CDN:\n"
-            "    PUBLIC_BASE_URL=https://cdn.jsdelivr.net/gh/YOUR_GH_USER/YOUR_REPO@main/stories"
+            "    PUBLIC_BASE_URL=https://cdn.jsdelivr.net/gh/YOUR_GH_USER/YOUR_REPO@main/media"
         )
     return f"{base.rstrip('/')}/{filename}"
 
@@ -488,6 +488,42 @@ def save_last_captions(caption: str, keep: int = 20) -> None:
         path.write_text(json.dumps(items[-keep:], ensure_ascii=False, indent=2))
 
 
+# --------------------------------------------------------------------------
+# product catalog (multi-product support)
+# --------------------------------------------------------------------------
+DEFAULT_BENEFITS = (
+    "Olivo artificial de 160 cm hiperrealista: hojas 'natural touch', tronco de "
+    "polietileno y acero galvanizado. 0 mantenimiento (sin riego ni luz solar), "
+    "siempre verde, dura 5-8 anos, materiales ecologicos. Ideal interior y "
+    "exteriores protegidos."
+)
+DEFAULT_CTA = ("Envios disponibles, escribenos por DM", "Ordena el tuyo hoy", "Link en bio para precios")
+
+
+def load_products() -> dict:
+    """products.json: { \"products\": { \"olivo\": { \"name\", \"benefits\", \"cta\": [] } } }"""
+    path = HERE / "products.json"
+    if path.exists():
+        try:
+            data = json.loads(path.read_text())
+            return data.get("products", {}) if isinstance(data, dict) else {}
+        except Exception:
+            pass
+    return {}
+
+
+def product_context(filename: str) -> dict:
+    """Return per-product prompt context for the given image."""
+    index = load_images_index()
+    slug = (index.get(filename, {})).get("product") or "olivo"
+    prod = load_products().get(slug, {})
+    return {
+        "product_name": prod.get("name") or slug,
+        "product_benefits": prod.get("benefits") or DEFAULT_BENEFITS,
+        "product_cta": " / ".join(prod.get("cta") or DEFAULT_CTA),
+    }
+
+
 DEFAULT_WRITER_VOICE = (
     "Eres el community manager de 'Lopc Pro Spa', tienda de arboles artificiales "
     "de olivo premium (decoracion mediterranea). Escribes captions de Instagram "
@@ -529,6 +565,7 @@ def build_ai_prompt(filename: str, desc: str, tags: list[str], last: list[str]) 
     last_str = "; ".join(last[-5:]) if last else "ninguno"
 
     template = load_prompt("caption.md")
+    ctx = product_context(filename)
     return _apply(
         template,
         voice=voice,
@@ -536,6 +573,9 @@ def build_ai_prompt(filename: str, desc: str, tags: list[str], last: list[str]) 
         desc=desc,
         tags=tags_str,
         last_captions=last_str,
+        product_name=ctx["product_name"],
+        product_benefits=ctx["product_benefits"],
+        product_cta=ctx["product_cta"],
     )
 
 
@@ -612,7 +652,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Publish an Instagram Story.")
     parser.add_argument("--dry-run", action="store_true", help="only show what would be published")
     parser.add_argument("--url", help="override the image URL to publish")
-    parser.add_argument("--image", help="publish a specific file from stories/playlist.json (uses its caption)")
+    parser.add_argument("--image", help="publish a specific file from media/playlist.json (uses its caption)")
     parser.add_argument("--feed", action="store_true", help="publish as a feed post (grid) instead of a Story")
     parser.add_argument("--caption", help="caption text (feed posts)")
     parser.add_argument("--ai-caption", action="store_true", help="generate the caption with opencode (AI writer)")
@@ -656,7 +696,7 @@ def main() -> None:
         match = next((e for e in entries if e[0] == args.image), None)
         if match is None:
             sys.exit(
-                f"[ERROR] '{args.image}' is not in stories/playlist.json.\n"
+                f"[ERROR] '{args.image}' is not in media/playlist.json.\n"
                 f"  Available images: {', '.join(e[0] for e in entries)}"
             )
         filename, picked_caption = match

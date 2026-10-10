@@ -46,7 +46,7 @@ The first run converts your token into a long-lived (60-day) token (stored in
 ## GitHub Actions cron (step 8)
 
 1. Push this project to a **public** GitHub repo (images included) → set
-   `PUBLIC_BASE_URL` to the jsDelivr URL (see `stories/README.md`).
+   `PUBLIC_BASE_URL` to the jsDelivr URL (see `media/README.md`).
 2. Repo → Settings → Secrets and variables → Actions → add:
    - `APP_ID`, `APP_SECRET`, `IG_USER_TOKEN`, `IG_BUSINESS_ACCOUNT_ID`
      (optional), `PUBLIC_BASE_URL`

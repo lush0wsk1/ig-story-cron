@@ -2,9 +2,9 @@
 """Prepare brand images for Instagram: center-crop to 4:5 (1080x1350).
 
 4:5 is accepted by BOTH Stories and Feed through the Graph API, so a single
-crop covers the whole pipeline. Originals live in stories/originals/ and this
-writes the ready-to-publish files into stories/ with a -v2 suffix (fresh CDN
-cache).
+crop covers the whole pipeline. Originals live in media/originals/ and this
+writes the ready-to-publish files into media/ with a -v2 suffix (fresh CDN
+cache). For one-shot additions prefer add_image.py.
 
 Usage:
     python prepare.py
@@ -14,13 +14,13 @@ from pathlib import Path
 from PIL import Image
 
 HERE = Path(__file__).resolve().parent
-SRC = HERE / "stories" / "originals"
-DST = HERE / "stories"
+SRC = HERE / "media" / "originals"
+DST = HERE / "media"
 W, H = 1080, 1350  # 4:5
 RATIO = W / H
 
 if not SRC.exists():
-    raise SystemExit("[ERROR] stories/originals/ not found")
+    raise SystemExit("[ERROR] media/originals/ not found")
 
 ok = 0
 for img in sorted(SRC.iterdir()):
@@ -42,5 +42,5 @@ for img in sorted(SRC.iterdir()):
     print(f"{img.name} ({iw}x{ih}) -> {out.name} (1080x1350)")
     ok += 1
 
-print(f"\nPreparadas {ok} imágenes en stories/")
-print("Actualiza stories/playlist.json con los nombres -v2 y haz push.")
+print(f"\nPreparadas {ok} imágenes en media/")
+print("Actualiza media/playlist.json con los nombres -v2 y haz push.")
