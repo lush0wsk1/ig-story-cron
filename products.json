@@ -7,7 +7,10 @@
         "Envios disponibles, escribenos por DM",
         "Ordena el tuyo hoy",
         "Link en bio para precios"
-      ]
+      ],
+      "links": {
+        "mercadolibre": "https://articulo.mercadolibre.cl/MLC-2242117631-arbol-artificial-olivo-para-interiores-_JM"
+      }
     }
   }
 }

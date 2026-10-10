@@ -85,6 +85,7 @@ def main() -> None:
     parser.add_argument("--product", default="olivo", help="product this image belongs to (products.json)")
     parser.add_argument("--caption", default="", help="optional static caption (fallback for feed posts)")
     parser.add_argument("--tags", default="", help="comma separated tags for the AI writer")
+    parser.add_argument("--ml-url", default="", help="Mercado Libre listing URL for this product (links.mercadolibre)")
     args = parser.parse_args()
 
     src = Path(args.source)
@@ -112,9 +113,16 @@ def main() -> None:
     IMAGES.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n")
 
     products = load_json(PRODUCTS, {"products": {}})
-    if args.product not in products.setdefault("products", {}):
-        products["products"][args.product] = {"name": args.product, "benefits": "", "cta": []}
+    prods = products.setdefault("products", {})
+    created = False
+    if args.product not in prods:
+        prods[args.product] = {"name": args.product, "benefits": "", "cta": [], "links": {}}
+        created = True
+    if args.ml_url.strip():
+        prods[args.product].setdefault("links", {})["mercadolibre"] = args.ml_url.strip()
+    if created or args.ml_url.strip():
         PRODUCTS.write_text(json.dumps(products, ensure_ascii=False, indent=2) + "\n")
+    if created:
         print(f"[i] producto '{args.product}' creado en products.json — rellena 'benefits' y 'cta'")
 
     subprocess.run(
