@@ -15,14 +15,28 @@
     },
     "arbol-interior": {
       "name": "Árbol artificial de interior",
-      "benefits": "Árbol artificial SenBo de interior: follaje frondoso con acabado 'natural touch', tronco de PE + acero galvanizado y material plástico ecológico resistente al agua. Disponible en 3 alturas (170/190/210 cm). Sin mantenimiento: se mantiene verde durante todo el año y dura de 3 a 8 años. Ideal para decorar salas, oficinas y espacios interiores.",
+      "benefits": "Árbol artificial decorativo SenBo (Guangdong Senbo Arts & Crafts, China), modelo XYS. Acabado 'natural touch' y follaje de textil técnico de alta densidad que imita las hojas reales; tronco de polietileno (PE) con estructura interna de acero galvanizado; materiales ecológicos y resistentes al agua. Disponible en 3 alturas (170/190/210 cm), color verde natural y apto para uso todo el año. Pensado para decoración de interiores: salas de estar, oficinas, vestíbulos y comercios. Durabilidad estimada de 3 a 10 años.",
       "cta": [
         "Envios disponibles, escribenos por DM",
         "Ordena el tuyo hoy",
         "Link en bio para precios"
       ],
       "hashtags": ["arbolartificial", "plantasartificiales"],
-      "links": {}
+      "links": {},
+      "specs": {
+        "marca": "SenBo (Guangdong Senbo Arts & Crafts Co., Ltd., China)",
+        "modelo": "XYS",
+        "alturas": ["170 cm", "190 cm", "210 cm"],
+        "tronco": "Polietileno (PE) + acero galvanizado",
+        "hojas": "Cinta/textil tecnico de alta densidad",
+        "color": "Verde natural",
+        "aplicacion": "Interiores: salas de estar, oficinas, vestibulos, comercios",
+        "vida_util": "3 a 10 anos",
+        "presentacion": "Unidad individual",
+        "empaque": "160 x 30 x 30 cm",
+        "peso_bruto": "5.0 kg",
+        "caja_master": "4 piezas / CTN"
+      }
     }
   }
 }
