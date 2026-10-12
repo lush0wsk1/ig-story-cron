@@ -369,8 +369,9 @@ def fetch_recent_comments(token: str, ig_id: str, media_limit: int = 10) -> list
 
 
 DEFAULT_VOICE = (
-    "Marca: 'Lopc Pro Spa' — tienda de olivos artificiales premium (decoración mediterránea). "
-    "Tono cercano, profesional y optimista, respondiendo en el idioma del comentario."
+    "Marca: 'Lopc Pro Spa' — tienda de arboles artificiales premium (decoracion "
+    "del hogar y de interior). Tono cercano, profesional y optimista, respondiendo "
+    "en el idioma del comentario."
 )
 
 
@@ -517,16 +518,18 @@ def product_context(filename: str) -> dict:
     index = load_images_index()
     slug = (index.get(filename, {})).get("product") or "olivo"
     prod = load_products().get(slug, {})
+    hs = prod.get("hashtags") or ["plantasartificiales"]
     return {
         "product_name": prod.get("name") or slug,
         "product_benefits": prod.get("benefits") or DEFAULT_BENEFITS,
         "product_cta": " / ".join(prod.get("cta") or DEFAULT_CTA),
+        "product_hashtags": " ".join("#" + h.strip().lstrip("#") for h in hs),
     }
 
 
 DEFAULT_WRITER_VOICE = (
     "Eres el community manager de 'Lopc Pro Spa', tienda de arboles artificiales "
-    "de olivo premium (decoracion mediterranea). Escribes captions de Instagram "
+    "premium (decoracion del hogar y de interior). Escribes captions de Instagram "
     "para una cuenta de negocio con tono cercano, natural y optimista."
 )
 
@@ -576,6 +579,7 @@ def build_ai_prompt(filename: str, desc: str, tags: list[str], last: list[str]) 
         product_name=ctx["product_name"],
         product_benefits=ctx["product_benefits"],
         product_cta=ctx["product_cta"],
+        product_hashtags=ctx["product_hashtags"],
     )
 
 

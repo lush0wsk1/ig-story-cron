@@ -2,21 +2,75 @@
   "olivo_detalle_closeup.jpg": {
     "product": "olivo",
     "desc": "Primer plano detallado de las hojas con textura 'natural touch' y las olivas realistas del árbol.",
-    "tags": ["natural touch", "detalle", "realista", "calidad premium", "olivas"]
+    "tags": [
+      "natural touch",
+      "detalle",
+      "realista",
+      "calidad premium",
+      "olivas"
+    ]
   },
   "olivo_ambiente_sala.jpg": {
     "product": "olivo",
     "desc": "Plano general del olivo artificial de gran altura decorando un rincón de sala o biblioteca con luz natural.",
-    "tags": ["sala", "decoracion hogar", "gran altura", "luz natural", "estilo mediterraneo"]
+    "tags": [
+      "sala",
+      "decoracion hogar",
+      "gran altura",
+      "luz natural",
+      "estilo mediterraneo"
+    ]
   },
   "olivo_ambiente_reloj.jpg": {
     "product": "olivo",
     "desc": "Olivo artificial de diseño esbelto ambientando un espacio minimalista junto a un reloj de pared.",
-    "tags": ["minimalista", "estilo nordico", "pared blanca", "decoracion interior", "elegante"]
+    "tags": [
+      "minimalista",
+      "estilo nordico",
+      "pared blanca",
+      "decoracion interior",
+      "elegante"
+    ]
   },
   "olivo_fondo_blanco.png": {
     "product": "olivo",
     "desc": "Fotografía de producto del olivo artificial sobre fondo blanco, mostrando el tronco texturizado y la copa frondosa.",
-    "tags": ["fondo blanco", "producto", "tronco texturizado", "catalogo", "envios disponibles"]
+    "tags": [
+      "fondo blanco",
+      "producto",
+      "tronco texturizado",
+      "catalogo",
+      "envios disponibles"
+    ]
+  },
+  "h500052ed635e4baebceb438e1d0a7963t-18383937.jpg": {
+    "product": "arbol-interior",
+    "desc": "H500052ed635e4baebceb438e1d0a7963t",
+    "tags": [
+      "follaje",
+      "realista",
+      "natural touch",
+      "sala"
+    ]
+  },
+  "hc595977baaa8419a91235112186a95ad2-18384160.jpg": {
+    "product": "arbol-interior",
+    "desc": "Hc595977baaa8419a91235112186a95ad2",
+    "tags": [
+      "arbol",
+      "verde",
+      "interior",
+      "decoracion"
+    ]
+  },
+  "scr-20261012-qfmo-18384216.jpg": {
+    "product": "arbol-interior",
+    "desc": "SCR-20261012-qfmo",
+    "tags": [
+      "producto",
+      "fondo",
+      "catalogo",
+      "alturas"
+    ]
   }
 }

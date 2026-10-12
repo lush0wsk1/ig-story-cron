@@ -19,9 +19,9 @@ CÓMO ESCRIBIRLO (estructura que vende):
 5. 1-2 emojis naturales.
 
 HASHTAGS (muy importante): escribe ENTRE 4 Y 6 hashtags al final.
-- Combina: (a) hashtags derivados de los tags de la foto, (b) hashtags de marca
-  (#olivoartificial, #plantasartificiales, #decoracionhogar) y (c) uno de
-  audiencia (#decor, #interiorismo, #mediterraneo u otro relevante).
+- Combina: (a) hashtags derivados de los tags de la foto, (b) los hashtags de
+  marca del producto: {product_hashtags} y (c) uno de audiencia (#decor,
+  #interiorismo, #plantasartificiales u otro relevante).
 - NO repitas un hashtag dos veces.
 
 REGLAS: máximo 500 caracteres, tono humano cercano (nada de anuncio), en español,
