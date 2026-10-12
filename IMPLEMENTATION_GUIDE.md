@@ -45,7 +45,7 @@ instagram-story-cron/
 ├── .env.example              # plantilla documentada
 ├── media/                    # imágenes + playlist.json (orden de rotación)
 ├── add_image.py              # añadir una foto: recorte 4:5 + playlist + tags (1 comando)
-├── products.json             # catálogo: beneficios/CTAs para la IA + links.mercadolibre
+├── products.json             # catálogo: name, benefits, cta[], hashtags[], links{}, specs{}
 │                             # (links = datos intencionales para "share" futuro:
 │                             #  auto-respuesta por DM, multi-link en bio, sticker stories)
 ├── prompts/                  # prompts editables (caption.md, reply.md) — obligatorios

@@ -116,7 +116,14 @@ def main() -> None:
     prods = products.setdefault("products", {})
     created = False
     if args.product not in prods:
-        prods[args.product] = {"name": args.product, "benefits": "", "cta": [], "links": {}}
+        prods[args.product] = {
+            "name": args.product,
+            "benefits": "",
+            "cta": [],
+            "hashtags": [],
+            "links": {},
+            "specs": {},
+        }
         created = True
     if args.ml_url.strip():
         prods[args.product].setdefault("links", {})["mercadolibre"] = args.ml_url.strip()
